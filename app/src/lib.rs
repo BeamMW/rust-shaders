@@ -48,6 +48,24 @@ fn on_action_view_contracts(_unused: ContractID) {
     env::enum_and_dump_contracts(&::common::SID);
 }
 
+// TEST ACTIONS
+
+fn on_action_hw(_unused: ContractID) {
+    env::doc_add_group("\0");
+    env::doc_add_group("test\0");
+    env::doc_add_text("hw\0", "Hello World!\0".as_ptr());
+    env::doc_close_group(); // test
+    env::doc_close_group(); // \0
+}
+
+fn on_action_whoami(_unused: ContractID) {
+    env::doc_add_group("\0");
+    env::doc_add_group("test\0");
+    env::doc_add_text("whoami\0", "I am a Rust contract\0".as_ptr());
+    env::doc_close_group(); // test
+    env::doc_close_group(); // \0
+}
+
 #[no_mangle]
 #[allow(non_snake_case)]
 fn Method_0() {
@@ -74,6 +92,10 @@ fn Method_0() {
     env::doc_add_group("hw\0");
     env::doc_add_text("message", "Outputs 'Hello World!'\0".as_ptr());
     env::doc_close_group(); // hw
+
+    env::doc_add_group("whoami\0");
+    env::doc_close_group(); // whoami
+
     env::doc_close_group(); // test
 
     env::doc_close_group(); // roles
@@ -91,21 +113,20 @@ fn Method_1() {
         ("view\0", on_action_view_contracts),
     ];
 
+    const VALID_TEST_ACTIONS: [(&str, ActionFunc); 2] = [
+        ("hw\0", on_action_hw),
+        ("whoami\0", on_action_whoami),
+    ];
+
     const VALID_ROLES: [(&str, ActionsMap); 2] = [
         ("manager\0", &VALID_MANAGER_ACTIONS),
-        ("test\0", &INVALID_ROLE_ACTIONS),
+        ("test\0", &VALID_TEST_ACTIONS),
     ];
 
     // Get role input
     let mut role: [u8; 32] = Default::default();
     if env::doc_get_text("role\0", &mut role, size_of_val(&role) as u32) == 0 {
         env::doc_add_text("error\0", "Missing or invalid role\0".as_ptr());
-        return;
-    }
-
-    if env::memcmp(&role, b"test\0".as_ptr(), 4) == 0 {
-        // Directly call Method_2 for the "hw" role
-        Method_2();
         return;
     }
 
@@ -140,33 +161,4 @@ fn Method_1() {
     }
 
     env::doc_add_text("error\0", "Invalid action\0".as_ptr());
-}
-
-#[no_mangle]
-#[allow(non_snake_case)]
-fn Method_2() {
-    // Handle the "test" role and "hw" action directly
-    let mut role: [u8; 32] = Default::default();
-    if env::doc_get_text("role\0", &mut role, size_of_val(&role) as u32) == 0 {
-        env::doc_add_text("error\0", "Missing or invalid role\0".as_ptr());
-        return;
-    }
-
-    if env::memcmp(&role, b"test\0".as_ptr(), 4) == 0 {
-        let mut action: [u8; 32] = Default::default();
-        if env::doc_get_text("action\0", &mut action, size_of_val(&action) as u32) > 0 {
-            if env::memcmp(&action, b"hw\0".as_ptr(), 2) == 0 {
-                env::doc_add_group("\0");
-                env::doc_add_group("test\0");
-                env::doc_add_text("hw\0", "Hello World!\0".as_ptr());
-                env::doc_close_group(); // test
-                env::doc_close_group(); // \0
-                return;
-            }
-        }
-        env::doc_add_text("error\0", "Invalid or missing action\0".as_ptr());
-        return;
-    }
-
-    env::doc_add_text("error\0", "Invalid role\0".as_ptr());
 }
