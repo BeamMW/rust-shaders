@@ -54,8 +54,9 @@ fn Method_0() {
     // Add documentation for roles and actions
     env::doc_add_group("\0");
     env::doc_add_group("roles\0");
-    env::doc_add_group("manager\0");
 
+    // Manager role documentation
+    env::doc_add_group("manager\0");
     env::doc_add_group("create\0");
     env::doc_close_group(); // create
 
@@ -67,13 +68,15 @@ fn Method_0() {
     env::doc_close_group(); // view
 
     env::doc_close_group(); // manager
+
+    // Test role documentation
+    env::doc_add_group("test\0");
+    env::doc_add_group("hw\0");
+    env::doc_add_text("message", "Outputs 'Hello World!'\0".as_ptr());
+    env::doc_close_group(); // hw
+    env::doc_close_group(); // test
+
     env::doc_close_group(); // roles
-
-    // Add documentation for example method (Method_2)
-    env::doc_add_group("example\0");
-    env::doc_add_text("message\0", "Outputs 'Hello World!'\0".as_ptr());
-    env::doc_close_group(); // example
-
     env::doc_close_group(); // \0
 }
 
@@ -90,55 +93,48 @@ fn Method_1() {
 
     const VALID_ROLES: [(&str, ActionsMap); 2] = [
         ("manager\0", &VALID_MANAGER_ACTIONS),
-        ("example\0", &INVALID_ROLE_ACTIONS), // Add the "example" role
+        ("test\0", &INVALID_ROLE_ACTIONS),
     ];
 
+    // Get role input
     let mut role: [u8; 32] = Default::default();
     if env::doc_get_text("role\0", &mut role, size_of_val(&role) as u32) == 0 {
         env::doc_add_text("error\0", "Missing or invalid role\0".as_ptr());
         return;
     }
 
-    if env::memcmp(&role, b"example\0".as_ptr(), 8) == 0 {
+    if env::memcmp(&role, b"test\0".as_ptr(), 4) == 0 {
         // Directly call Method_2 for the "hw" role
         Method_2();
         return;
     }
 
     let mut action_map: ActionsMap = &INVALID_ROLE_ACTIONS;
-    for i in 0..VALID_ROLES.len() {
-        if env::memcmp(
-            &role,
-            VALID_ROLES[i].0.as_ptr(),
-            VALID_ROLES[i].0.len() as u32,
-        ) == 0
-        {
-            action_map = VALID_ROLES[i].1;
+    for &(valid_role, actions) in VALID_ROLES.iter() {
+        if env::memcmp(&role, valid_role.as_ptr(), valid_role.len() as u32) == 0 {
+            action_map = actions;
             break;
         }
     }
 
+    // Handle invalid role
     if action_map == &INVALID_ROLE_ACTIONS {
         env::doc_add_text("error\0", "Invalid role\0".as_ptr());
         return;
     }
 
+    // Get and execute action
     let mut action: [u8; 32] = Default::default();
     if env::doc_get_text("action\0", &mut action, size_of_val(&action) as u32) == 0 {
         env::doc_add_text("error\0", "Missing or invalid action\0".as_ptr());
         return;
     }
 
-    for i in 0..action_map.len() {
-        if env::memcmp(
-            &action,
-            action_map[i].0.as_ptr(),
-            action_map[i].0.len() as u32,
-        ) == 0
-        {
+    for &(valid_action, func) in action_map.iter() {
+        if env::memcmp(&action, valid_action.as_ptr(), valid_action.len() as u32) == 0 {
             let mut cid: ContractID = Default::default();
             env::doc_get_blob("cid\0", &mut cid, size_of_val(&cid) as u32);
-            action_map[i].1(cid);
+            func(cid);
             return;
         }
     }
@@ -149,16 +145,28 @@ fn Method_1() {
 #[no_mangle]
 #[allow(non_snake_case)]
 fn Method_2() {
-    // Add top-level documentation
-    env::doc_add_group("\0");
+    // Handle the "test" role and "hw" action directly
+    let mut role: [u8; 32] = Default::default();
+    if env::doc_get_text("role\0", &mut role, size_of_val(&role) as u32) == 0 {
+        env::doc_add_text("error\0", "Missing or invalid role\0".as_ptr());
+        return;
+    }
 
-    // Add a specific group for this method
-    env::doc_add_group("example\0");
+    if env::memcmp(&role, b"test\0".as_ptr(), 4) == 0 {
+        let mut action: [u8; 32] = Default::default();
+        if env::doc_get_text("action\0", &mut action, size_of_val(&action) as u32) > 0 {
+            if env::memcmp(&action, b"hw\0".as_ptr(), 2) == 0 {
+                env::doc_add_group("\0");
+                env::doc_add_group("test\0");
+                env::doc_add_text("hw\0", "Hello World!\0".as_ptr());
+                env::doc_close_group(); // test
+                env::doc_close_group(); // \0
+                return;
+            }
+        }
+        env::doc_add_text("error\0", "Invalid or missing action\0".as_ptr());
+        return;
+    }
 
-    // Add the "Hello World!" message
-    env::doc_add_text("message\0", "I \0".as_ptr());
-
-    // Close the groups in reverse order
-    env::doc_close_group(); // example
-    env::doc_close_group(); // \0
+    env::doc_add_text("error\0", "Invalid role\0".as_ptr());
 }
