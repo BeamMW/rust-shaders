@@ -33,3 +33,34 @@ impl DtorParams {
 impl HelloWorld {
     pub const METHOD: u32 = 2;
 }
+
+// Vault-specific types
+#[repr(C, packed(1))]
+pub struct Key {
+    pub account: PubKey,
+    pub aid: AssetID,
+}
+
+#[repr(C, packed(1))]
+pub struct Request {
+    pub key: Key,
+    pub amount: Amount,
+}
+
+#[repr(C, packed(1))]
+pub struct Deposit {
+    pub request: Request,
+}
+
+#[repr(C, packed(1))]
+pub struct Withdraw {
+    pub request: Request,
+}
+
+impl Deposit {
+    pub const METHOD: u32 = 2;
+}
+
+impl Withdraw {
+    pub const METHOD: u32 = 3;
+}
