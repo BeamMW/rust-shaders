@@ -1,7 +1,12 @@
 [workspace]
+resolver = "2"
 
 members = [
-    "contract",
-    "app",
     "common",
+    "Shaders/HelloWorld/app",
+    "Shaders/HelloWorld/contract",
+    "Shaders/HelloBeamers/app",
+    "Shaders/HelloBeamers/contract",
+    "Shaders/Vault/app",
+    "Shaders/Vault/contract",
 ]
