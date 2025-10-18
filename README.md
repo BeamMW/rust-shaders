@@ -74,3 +74,7 @@ To add a new contract:
 2. Add `app/` and `contract/` subdirectories with their respective `Cargo.toml` and `src/lib.rs` files
 3. Update the root `Cargo.toml` workspace members to include your new contract paths
 4. Ensure both `app` and `contract` depend on the `common` crate
+
+<hr>
+
+Originally developed by https://github.com/iKapitonau/beam_shader_rust
